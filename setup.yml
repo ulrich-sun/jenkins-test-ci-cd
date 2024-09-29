@@ -1,0 +1,7 @@
+- hosts: example
+  become: yes
+  tasks:
+    - name: Installer Apache
+      apt:
+        name: apache2
+        state: present

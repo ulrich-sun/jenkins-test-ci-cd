@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'us-east-1' // Modifie selon ta région
+        INSTANCE_TYPE = 't2.micro'
+        AMI_ID = 'ami-12345678' // Remplace par une AMI valide
+    }
+
+    stages {
+        stage('Terraform') {
+            steps {
+                script {
+                    // Initialiser Terraform
+                    sh 'terraform init'
+
+                    // Appliquer la configuration Terraform
+                    sh 'terraform apply -auto-approve'
+
+                    // Récupérer l'IP publique de l'instance
+                    def output = sh(script: 'terraform output -json', returnStdout: true)
+                    def json = readJSON(text: output)
+                    env.INSTANCE_IP = json.instance_ip.value
+                }
+            }
+        }
+        stage('Ansible') {
+            steps {
+                // Créer le fichier d'inventaire Ansible
+                writeFile file: 'hosts.ini', text: "[aws]\ninstance ansible_host=${env.INSTANCE_IP} ansible_user=ec2-user"
+
+                // Exécuter le playbook Ansible
+                sh 'ansible-playbook -i hosts.ini setup.yml'
+            }
+        }
+    }
+
+    post {
+        always {
+            // Cleanup, par exemple, détruire l'instance
+            sh 'terraform destroy -auto-approve'
+        }
+    }
+}

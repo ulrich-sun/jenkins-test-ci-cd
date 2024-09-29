@@ -8,6 +8,12 @@ pipeline {
                     args '-v $HOME/.aws:/root/.aws'  // Montez le répertoire AWS credentials si nécessaire
                 }
             }
+            environment {
+                AWS_REGION = 'us-east-1'
+                AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
+                AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
+                PRIVATE_AWS_KEY = credentials('private_aws_key')
+            } 
             steps {
                 sh 'terraform init'
                 sh 'terraform apply -auto-approve'
