@@ -29,9 +29,9 @@ pipeline {
                     // Appliquer la configuration Terraform
                     sh 'terraform apply --auto-approve'
                     
-                    // Récupérer l'adresse IP publique de l'instance
-                    def instanceIP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
-                    echo "L'adresse IP publique de l'instance est : ${instanceIP}"
+                    // // Récupérer l'adresse IP publique de l'instance
+                    // def instanceIP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
+                    // echo "L'adresse IP publique de l'instance est : ${instanceIP}"
                 }
             }
         }

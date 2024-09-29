@@ -2,15 +2,25 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_instance" "example" {
+
+variable "project_name" {
+    default = "sun"
+}
+resource "aws_instance" "sun" {
   ami           = "ami-0e86e20dae9224db8"  # Remplacez par l'AMI de votre choix
   instance_type = "t2.micro"
 
   tags = {
-    Name = "ExampleInstance"
+    Name = "sunInstance"
+  }
+
+  provisioner "local-exec" {
+    command = "echo IP: ${aws_instance.sun.public_ip} > /var/jenkins_home/workspace/${var.projet_name}/public_ip.txt"
   }
 }
 
+
+
 output "instance_ip" {
-  value = aws_instance.example.public_ip
+  value = aws_instance.sun.public_ip
 }
