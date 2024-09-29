@@ -15,7 +15,7 @@ pipeline {
             environment {
                 AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
                 AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
-                // PRIVATE_AWS_KEY = credentials('private_aws_key')
+                PRIVATE_AWS_KEY = credentials('private_aws_key')
             }
             steps {
                 script {
@@ -29,19 +29,11 @@ pipeline {
                     // Appliquer la configuration Terraform
                     sh 'terraform apply --auto-approve'
                     
-                    // // Récupérer l'adresse IP publique de l'instance
-                    // def instanceIP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
-                    // echo "L'adresse IP publique de l'instance est : ${instanceIP}"
+                    // Récupérer l'adresse IP publique de l'instance
+                    def instanceIP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
+                    echo "L'adresse IP publique de l'instance est : ${instanceIP}"
                 }
             }
         }
-        stage ('show ip address'){
-            agent none
-            steps {
-                script {
-                    sh 'echo /var/jenkins_home/workspace/sun/public_ip.txt '
-                }
-            }
-        }
-    }   
+    }
 }
