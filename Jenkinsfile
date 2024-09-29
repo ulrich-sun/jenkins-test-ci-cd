@@ -9,7 +9,7 @@ pipeline {
         stage('Terraform Init and Apply') {
             agent {
                 docker {
-                    image 'jenkins/jnlp-agent-terraform'  // Remplacez par votre image personnalisée
+                    image 'jenkins/jnlp-agent-terraform'  // Assurez-vous que cette image contient Terraform
                 }
             }
             environment {
@@ -18,17 +18,20 @@ pipeline {
                 PRIVATE_AWS_KEY = credentials('private_aws_key')
             }
             steps {
-                sh 'terraform init'
-                sh 'which terraform || echo "Terraform not found"'
-                sh 'terraform version'
-                sh 'terraform apply --auto-approve'
-            }
-        }
-        stage('Get Public IP') {
-            steps {
                 script {
+                    // Initialiser Terraform
+                    sh 'terraform init'
+                    
+                    // Vérifier si Terraform est installé
+                    sh 'which terraform || echo "Terraform not found"'
+                    sh 'terraform version'
+                    
+                    // Appliquer la configuration Terraform
+                    sh 'terraform apply --auto-approve'
+                    
+                    // Récupérer l'adresse IP publique de l'instance
                     def instanceIP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
-                    echo "L\'adresse IP publique de l\'instance est : ${instanceIP}"
+                    echo "L'adresse IP publique de l'instance est : ${instanceIP}"
                 }
             }
         }
