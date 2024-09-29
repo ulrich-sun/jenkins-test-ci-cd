@@ -5,6 +5,7 @@ pipeline {
             agent {
                 docker {
                     image 'hashicorp/terraform:latest'
+                    args '-v $HOME/.aws:/root/.aws'  // Montez le répertoire AWS si nécessaire
                 }
             }
             environment {
@@ -12,7 +13,7 @@ pipeline {
                 AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
                 AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
                 PRIVATE_AWS_KEY = credentials('private_aws_key')
-            } 
+            }
             steps {
                 sh 'terraform init'
                 sh 'terraform apply -auto-approve'
@@ -25,7 +26,7 @@ pipeline {
                 }
             }
             steps {
-                sh 'terraform apply -target=local_file.inventory'
+                sh 'terraform output -json > inventory.json'
             }
         }
         stage('Ansible Provisioning') {
@@ -36,7 +37,8 @@ pipeline {
                 }
             }
             steps {
-                ansiblePlaybook credentialsId: 'ansible-ssh', inventory: 'inventory', playbook: 'setup.yml'
+                // Assurez-vous que l'inventaire est bien formaté
+                sh 'ansible-playbook -i inventory.json setup.yml'
             }
         }
     }
