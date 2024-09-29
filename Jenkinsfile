@@ -40,6 +40,8 @@ pipeline {
                 script {
                     def instanceIP = readFile('instance_ip.txt').trim()
                     echo "Installer Nginx sur l'instance avec IP : ${instanceIP}"
+                    echo " CHange key permission"
+                    sh 'chmod 400 sun.pem'
                     
                     // Créer un fichier d'inventaire pour Ansible
                     writeFile file: 'inventory.ini', text: "[web]\n${instanceIP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
