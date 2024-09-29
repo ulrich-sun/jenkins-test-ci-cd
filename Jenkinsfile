@@ -6,7 +6,7 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/ulrich-sun/jenkins-test-ci-cd.git'
             }
         }
-        stage('Terraform Init') {
+        stage('Terraform Init and Apply') {
             agent {
                 docker {
                     image 'jenkins/jnlp-agent-terraform'  // Remplacez par votre image personnalisée
@@ -19,10 +19,6 @@ pipeline {
             }
             steps {
                 sh 'terraform init'
-            }
-        }
-        stage('Terraform Apply') {
-            steps {
                 sh 'which terraform || echo "Terraform not found"'
                 sh 'terraform version'
                 sh 'terraform apply --auto-approve'
