@@ -9,7 +9,7 @@ pipeline {
         stage('Terraform Init') {
             agent {
                 docker {
-                    image 'your-custom-image-with-terraform'  // Remplacez par votre image personnalisée
+                    image 'jenkins/jnlp-agent-terraform'  // Remplacez par votre image personnalisée
                 }
             }
             environment {
