@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 
-variable "project_name" {
+variable "projet_name" {
     default = "sun"
 }
 resource "aws_instance" "sun" {
