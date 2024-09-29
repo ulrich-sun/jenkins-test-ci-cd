@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "example" {
-  ami           = "ami-0c55b159cbfafe1f0"  # Remplacez par l'AMI de votre choix
+  ami           = "ami-0e86e20dae9224db8"  # Remplacez par l'AMI de votre choix
   instance_type = "t2.micro"
 
   tags = {
