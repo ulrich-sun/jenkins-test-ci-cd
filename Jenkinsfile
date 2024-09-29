@@ -24,5 +24,13 @@ pipeline {
                 sh 'terraform apply --auto-approve'
             }
         }
+        stage('Get Public IP') {
+            steps {
+                script {
+                    def instanceIP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
+                    echo "L\'adresse IP publique de l\'instance est : ${instanceIP}"
+                }
+            }
+        }
     }
 }
