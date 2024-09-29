@@ -33,7 +33,7 @@ pipeline {
         stage('Install Nginx with Ansible') {
             agent {
                 docker {
-                    image 'ansible/ansible:latest'  // Utiliser une image Ansible
+                    image 'registry.gitlab.com/robconnolly/docker-ansible:latest'  // Utiliser une image Ansible
                 }
             }
             steps {

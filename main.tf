@@ -12,7 +12,7 @@ resource "aws_instance" "sun" {
   key_name = "sun"
 
   tags = {
-    Name = "sunInstance"
+    Name = "sun"
   }
 
   provisioner "local-exec" {
