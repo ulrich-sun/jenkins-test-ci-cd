@@ -9,6 +9,7 @@ variable "projet_name" {
 resource "aws_instance" "sun" {
   ami           = "ami-0e86e20dae9224db8"  # Remplacez par l'AMI de votre choix
   instance_type = "t2.micro"
+  key_name = "sun"
 
   tags = {
     Name = "sunInstance"
