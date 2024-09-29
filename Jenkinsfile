@@ -35,12 +35,13 @@ pipeline {
                 }
             }
         }
-        stage ('show ip address')
+        stage ('show ip address'){
             agent none
             steps {
                 script {
                     sh 'echo /var/jenkins_home/workspace/sun/public_ip.txt '
                 }
             }
-    }
+        }
+    }   
 }
