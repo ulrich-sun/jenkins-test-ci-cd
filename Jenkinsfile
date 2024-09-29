@@ -1,11 +1,10 @@
 pipeline {
-    agent any
+    agent none
     stages {
         stage('Terraform Apply') {
             agent {
                 docker {
                     image 'hashicorp/terraform:latest'
-                    args '-v $HOME/.aws:/root/.aws'  // Montez le répertoire AWS credentials si nécessaire
                 }
             }
             environment {
