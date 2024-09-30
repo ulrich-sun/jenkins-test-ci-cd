@@ -68,6 +68,7 @@ pipeline {
                         """
                         // Configurer kubectl pour accéder au cluster K3s
                         sh """
+                        chmod 400 sun.pem
                         ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
                         """
                         // Configurer kubectl pour utiliser le fichier kubeconfig
