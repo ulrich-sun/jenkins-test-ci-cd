@@ -75,7 +75,10 @@ pipeline {
                         sh 'export KUBECONFIG=kubeconfig.yaml'
 
                         // Déployer les manifests Kubernetes
-                        sh 'kubectl apply -f .'
+                        sh """
+                        kubectl apply -f deployment.yaml
+                        kubectl apply -f services.yaml
+                        """
                     }
                 }
         }
