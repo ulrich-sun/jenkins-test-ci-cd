@@ -8,7 +8,7 @@ variable "projet_name" {
 }
 resource "aws_instance" "sun" {
   ami           = "ami-0e86e20dae9224db8"  # Remplacez par l'AMI de votre choix
-  instance_type = "t2.micro"
+  instance_type = "t2.medium"
   key_name = "sun"
   vpc_security_group_ids = [aws_security_group.my_sg.id]
 
