@@ -56,7 +56,7 @@ pipeline {
         stage('Configure kubectl for Remote Access') {
             steps {
                 script {
-                    def instanceIP = readFile('instance_ip.txt').trim()
+                    // def instanceIP = readFile('instance_ip.txt').trim()
                     echo "Configurer kubectl pour accéder à K3s sur l'instance..."
 
                     // Récupérer le fichier kubeconfig
