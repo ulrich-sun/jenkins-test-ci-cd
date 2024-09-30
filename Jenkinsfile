@@ -36,7 +36,7 @@ pipeline {
         stage('Install K3s with Ansible') {
             agent {
                 docker {
-                    image 'ansible/ansible:latest'
+                    image 'registry.gitlab.com/robconnolly/docker-ansible:latest'
                 }
             }
             steps {
