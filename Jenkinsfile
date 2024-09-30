@@ -54,7 +54,7 @@ pipeline {
         stage('Deploy Kubernetes Manifests') {
             agent {
                 docker {
-                    image 'bitnami/kubectl:1.29'  // Utiliser une image contenant kubectl
+                    image 'd3fk/kubectl:latest'  // Utiliser une image contenant kubectl
                 }
             }
             steps {
