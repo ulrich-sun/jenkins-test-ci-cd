@@ -57,24 +57,23 @@ pipeline {
             }
         }
         stage('Configure kubectl for Remote Access') {
-            steps {
-                script {
-                    // def INSTANCE_IP = readFile('instance_ip.txt').trim()
-                    echo "Configurer kubectl pour accéder à K3s sur l'instance..."
+        steps {
+            script {
+                // Lire l'IP depuis le fichier
+                def instanceIP = readFile('instance_ip.txt').trim()
+                echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
 
-                    // Récupérer le fichier kubeconfig
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${INSTANCE_IP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
-                    '''
-                    
-                    // Modifier le kubeconfig pour utiliser l'IP publique
-                    sh "sed -i 's/127.0.0.1/${INSTANCE_IP}/' kubeconfig.yaml"
+                // Afficher le contenu de l'IP pour débogage
+                sh 'cat instance_ip.txt'
 
-                    // Définir la variable d'environnement KUBECONFIG
-                    sh 'export KUBECONFIG=$(pwd)/kubeconfig.yaml'
-                }
+                // Récupérer le fichier kubeconfig
+                sh """
+                ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
+                """
             }
         }
+        }
+
         stage('Deploy to K3s') {
             steps {
                 script {
