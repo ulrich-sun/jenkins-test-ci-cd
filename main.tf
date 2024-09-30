@@ -13,7 +13,7 @@ resource "aws_instance" "sun" {
   vpc_security_group_ids = [aws_security_group.my_sg.id]
 
   tags = {
-    Name = "sun"
+    Name = "yes"
   }
 
  provisioner "local-exec" {
@@ -111,5 +111,5 @@ output "output_sg_name" {
 }
 variable "maintainer" {
   type    = string
-  default = "ulrich"
+  default = "yes"
 }
