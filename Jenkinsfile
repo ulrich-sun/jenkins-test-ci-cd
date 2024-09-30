@@ -6,40 +6,40 @@ pipeline {
     environment {
         INSTANCE_IP = ''
     }
-    stages {
-        stage('Checkout from GIT') {
-            steps {
-                git branch: 'dev', url: 'https://github.com/ulrich-sun/jenkins-test-ci-cd.git'
-            }
-        }
-        stage('Terraform Init and Apply') {
-            agent {
-                docker {
-                    image 'jenkins/jnlp-agent-terraform'
-                }
-            }
-            environment {
-                AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
-                AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
-            }
-            steps {
-                script {
-                    try {
-                        sh 'terraform init'
-                        sh 'terraform apply --auto-approve'
+    // stages {
+    //     stage('Checkout from GIT') {
+    //         steps {
+    //             git branch: 'dev', url: 'https://github.com/ulrich-sun/jenkins-test-ci-cd.git'
+    //         }
+    //     }
+    //     stage('Terraform Init and Apply') {
+    //         agent {
+    //             docker {
+    //                 image 'jenkins/jnlp-agent-terraform'
+    //             }
+    //         }
+    //         environment {
+    //             AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
+    //             AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
+    //         }
+    //         steps {
+    //             script {
+    //                 try {
+    //                     sh 'terraform init'
+    //                     sh 'terraform apply --auto-approve'
                         
-                        // Récupérer l'adresse IP publique de l'instance
-                        INSTANCE_IP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
-                        echo "L'adresse IP publique de l'instance est : ${INSTANCE_IP}"
+    //                     // Récupérer l'adresse IP publique de l'instance
+    //                     INSTANCE_IP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
+    //                     echo "L'adresse IP publique de l'instance est : ${INSTANCE_IP}"
 
-                        // Stocker l'IP dans un fichier pour l'étape suivante
-                        writeFile file: 'instance_ip.txt', text: INSTANCE_IP
-                    } catch (Exception e) {
-                        error "Échec de l'initialisation ou de l'application Terraform : ${e.message}"
-                    }
-                }
-            }
-        }
+    //                     // Stocker l'IP dans un fichier pour l'étape suivante
+    //                     writeFile file: 'instance_ip.txt', text: INSTANCE_IP
+    //                 } catch (Exception e) {
+    //                     error "Échec de l'initialisation ou de l'application Terraform : ${e.message}"
+    //                 }
+    //             }
+    //         }
+    //     }
         // stage('Install K3s with Ansible') {
         //     agent {
         //         docker {
@@ -66,32 +66,39 @@ pipeline {
         //     }
         // }
         stage('Configure kubectl for Remote Access') {
-            steps {
-                script {
-                    // Lire l'IP de l'instance
-                    def instanceIP = readFile('instance_ip.txt').trim()
-                    echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
+        steps {
+            script {
+                // Lire l'IP de l'instance
+                def instanceIP = readFile('instance_ip.txt').trim()
+                echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
 
-                    // Afficher le contenu de l'IP pour débogage
-                    sh "cat instance_ip.txt"
+                // Afficher le contenu de l'IP pour débogage
+                sh "cat instance_ip.txt"
 
-                    // Vérifier si l'IP n'est pas vide
-                    if (!instanceIP) {
-                        error "L'adresse IP de l'instance est vide."
-                    }
+                // Vérifier si l'IP n'est pas vide
+                if (!instanceIP) {
+                    error "L'adresse IP de l'instance est vide."
+                }
 
-                    // Récupérer le fichier kubeconfig
-                    try {
-                        sh """
-                        ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
-                        """
-                        echo "Fichier kubeconfig récupéré avec succès."
-                    } catch (Exception e) {
-                        error "Échec de la récupération du fichier kubeconfig : ${e.message}"
-                    }
+                // Récupérer le fichier kubeconfig
+                try {
+                    // Récupérer le contenu de kubeconfig avant la connexion SSH
+                    def kubeconfigContent = sh(script: "ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} 'sudo cat /etc/rancher/k3s/k3s.yaml'", returnStdout: true).trim()
+                    
+                    // Écrire le contenu dans kubeconfig.yaml
+                    writeFile file: 'kubeconfig.yaml', text: kubeconfigContent
+                    echo "Fichier kubeconfig récupéré avec succès."
+
+                    // Afficher le contenu du fichier kubeconfig pour vérification
+                    echo "Contenu de kubeconfig.yaml :"
+                    echo kubeconfigContent
+                } catch (Exception e) {
+                    error "Échec de la récupération du fichier kubeconfig : ${e.message}"
                 }
             }
         }
+    }
+
 
         stage('Deploy to K3s') {
             steps {
