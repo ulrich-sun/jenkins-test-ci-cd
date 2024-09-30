@@ -57,6 +57,9 @@ pipeline {
             agent any
                 steps {
                     script {
+                        timeout(time: 5, unit: "MINUTES") {
+                                input message: "Etes vous certains de vouloir cette MEP ?", ok: 'Yes'
+                        } 
                         // Lire l'IP de l'instance
                         def instanceIP = readFile('instance_ip.txt').trim()
                         echo "Déploiement des manifests Kubernetes sur le cluster K3s avec IP : ${instanceIP}"
