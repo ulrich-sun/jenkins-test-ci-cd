@@ -1,3 +1,5 @@
+/* import shared library. */
+@Library('ulrich-shared-library')_
 pipeline {
     agent any
     stages {
@@ -53,30 +55,40 @@ pipeline {
         }
         stage('Deploy Kubernetes Manifests') {
             agent any
-            steps {
-                script {
-                    // Lire l'IP de l'instance
-                    def instanceIP = readFile('instance_ip.txt').trim()
-                    echo "Déploiement des manifests Kubernetes sur le cluster K3s avec IP : ${instanceIP}"
-                    sh  """
-                    curl -LO https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
-                    curl -LO https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl
-                    chmod +x ./kubectl
-                    mv ./kubectl /usr/local/bin/kubectl
-                    kubectl version --client
-                    
-                    """
-                    // Configurer kubectl pour accéder au cluster K3s
-                    sh """
-                    ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
-                    """
-                    // Configurer kubectl pour utiliser le fichier kubeconfig
-                    sh 'export KUBECONFIG=kubeconfig.yaml'
+                steps {
+                    script {
+                        // Lire l'IP de l'instance
+                        def instanceIP = readFile('instance_ip.txt').trim()
+                        echo "Déploiement des manifests Kubernetes sur le cluster K3s avec IP : ${instanceIP}"
+                        sh """
+                        curl -LO https://dl.k8s.io/release/\$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
+                        chmod +x ./kubectl
+                        mv ./kubectl /usr/local/bin/kubectl
+                        kubectl version --client
+                        """
+                        // Configurer kubectl pour accéder au cluster K3s
+                        sh """
+                        ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
+                        """
+                        // Configurer kubectl pour utiliser le fichier kubeconfig
+                        sh 'export KUBECONFIG=kubeconfig.yaml'
 
-                    // Déployer les manifests Kubernetes
-                    sh 'kubectl apply -f deployment.yml'
+                        // Déployer les manifests Kubernetes
+                        sh 'kubectl apply -f deployment.yml'
+                    }
                 }
+        }
+
+    }
+    post {
+        always {
+            script {
+                /*sh '''
+                    echo "Manually Cleaning workspace after starting"
+                    rm -f vault.key id_rsa id_rsa.pub password devops.pem public_ip.txt
+                ''' */
+                slackNotifier currentBuild.result
             }
         }
-    }
+    }    
 }
