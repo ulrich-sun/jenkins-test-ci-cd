@@ -6,7 +6,7 @@ pipeline {
     environment {
         INSTANCE_IP = ''
     }
-    // stages {
+    stages {
     //     stage('Checkout from GIT') {
     //         steps {
     //             git branch: 'dev', url: 'https://github.com/ulrich-sun/jenkins-test-ci-cd.git'
@@ -66,37 +66,37 @@ pipeline {
         //     }
         // }
         stage('Configure kubectl for Remote Access') {
-        steps {
-            script {
-                // Lire l'IP de l'instance
-                def instanceIP = readFile('instance_ip.txt').trim()
-                echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
+            steps {
+                script {
+                    // Lire l'IP de l'instance
+                    def instanceIP = readFile('instance_ip.txt').trim()
+                    echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
 
-                // Afficher le contenu de l'IP pour débogage
-                sh "cat instance_ip.txt"
+                    // Afficher le contenu de l'IP pour débogage
+                    sh "cat instance_ip.txt"
 
-                // Vérifier si l'IP n'est pas vide
-                if (!instanceIP) {
-                    error "L'adresse IP de l'instance est vide."
-                }
+                    // Vérifier si l'IP n'est pas vide
+                    if (!instanceIP) {
+                        error "L'adresse IP de l'instance est vide."
+                    }
 
-                // Récupérer le fichier kubeconfig
-                try {
-                    // Récupérer le contenu de kubeconfig avant la connexion SSH
-                    def kubeconfigContent = sh(script: "ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} 'sudo cat /etc/rancher/k3s/k3s.yaml'", returnStdout: true).trim()
-                    
-                    // Écrire le contenu dans kubeconfig.yaml
-                    writeFile file: 'kubeconfig.yaml', text: kubeconfigContent
-                    echo "Fichier kubeconfig récupéré avec succès."
+                    // Récupérer le fichier kubeconfig
+                    try {
+                        // Récupérer le contenu de kubeconfig avant la connexion SSH
+                        def kubeconfigContent = sh(script: "ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} 'sudo cat /etc/rancher/k3s/k3s.yaml'", returnStdout: true).trim()
+                        
+                        // Écrire le contenu dans kubeconfig.yaml
+                        writeFile file: 'kubeconfig.yaml', text: kubeconfigContent
+                        echo "Fichier kubeconfig récupéré avec succès."
 
-                    // Afficher le contenu du fichier kubeconfig pour vérification
-                    echo "Contenu de kubeconfig.yaml :"
-                    echo kubeconfigContent
-                } catch (Exception e) {
-                    error "Échec de la récupération du fichier kubeconfig : ${e.message}"
+                        // Afficher le contenu du fichier kubeconfig pour vérification
+                        echo "Contenu de kubeconfig.yaml :"
+                        echo kubeconfigContent
+                    } catch (Exception e) {
+                        error "Échec de la récupération du fichier kubeconfig : ${e.message}"
+                    }
                 }
             }
-        }
     }
 
 
