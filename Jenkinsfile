@@ -75,7 +75,7 @@ pipeline {
                         sh 'export KUBECONFIG=kubeconfig.yaml'
 
                         // Déployer les manifests Kubernetes
-                        sh 'kubectl apply -f deployment.yml'
+                        sh 'kubectl apply -f .'
                     }
                 }
         }
