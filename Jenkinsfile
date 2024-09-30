@@ -21,7 +21,7 @@ pipeline {
             steps {
                 script {
                     sh 'terraform init'
-                    sh 'terraform apply --auto-approve'
+                    sh 'terraform destroy --auto-approve'
                     
                     // Récupérer l'adresse IP publique de l'instance
                     def instanceIP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
@@ -32,61 +32,61 @@ pipeline {
                 }
             }
         }
-        stage('Install Nginx with Ansible') {
-            agent {
-                docker {
-                    image 'registry.gitlab.com/robconnolly/docker-ansible:latest'  // Utiliser une image Ansible
-                }
-            }
-            steps {
-                script {
-                    def instanceIP = readFile('instance_ip.txt').trim()
-                    echo "Installer Nginx sur l'instance avec IP : ${instanceIP}"
-                    echo " CHanger les permissions de la clé"
-                    sh 'chmod 400 sun.pem'
+        // stage('Install Nginx with Ansible') {
+        //     agent {
+        //         docker {
+        //             image 'registry.gitlab.com/robconnolly/docker-ansible:latest'  // Utiliser une image Ansible
+        //         }
+        //     }
+        //     steps {
+        //         script {
+        //             def instanceIP = readFile('instance_ip.txt').trim()
+        //             echo "Installer Nginx sur l'instance avec IP : ${instanceIP}"
+        //             echo " CHanger les permissions de la clé"
+        //             sh 'chmod 400 sun.pem'
                     
-                    // Créer un fichier d'inventaire pour Ansible
-                    writeFile file: 'inventory.ini', text: "[web]\n${instanceIP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
+        //             // Créer un fichier d'inventaire pour Ansible
+        //             writeFile file: 'inventory.ini', text: "[web]\n${instanceIP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
 
-                    // Exécuter le playbook Ansible
-                    sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
-                }
-            }
-        }
-        stage('Deploy Kubernetes Manifests') {
-            agent any
-                steps {
-                    script {
-                        timeout(time: 5, unit: "MINUTES") {
-                                input message: "Etes vous certains de vouloir cette MEP ?", ok: 'Yes'
-                        } 
-                        // Lire l'IP de l'instance
-                        def instanceIP = readFile('instance_ip.txt').trim()
-                        echo "Déploiement des manifests Kubernetes sur le cluster K3s avec IP : ${instanceIP}"
-                        sh """
-                        curl -LO https://dl.k8s.io/release/\$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
-                        chmod +x ./kubectl
-                        mv ./kubectl /usr/local/bin/kubectl
-                        kubectl version --client
-                        """
-                        // Configurer kubectl pour accéder au cluster K3s
-                        sh """
-                        chmod 400 sun.pem
-                        ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
-                        """
-                         // Modifier le kubeconfig pour utiliser l'IP publique
-                         sh "sed -i 's/127.0.0.1/${instanceIP}/' kubeconfig.yaml"
-                        // Configurer kubectl pour utiliser le fichier kubeconfig
-                        sh 'export KUBECONFIG=kubeconfig.yaml'
+        //             // Exécuter le playbook Ansible
+        //             sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
+        //         }
+        //     }
+        // }
+        // stage('Deploy Kubernetes Manifests') {
+        //     agent any
+        //         steps {
+        //             script {
+        //                 timeout(time: 5, unit: "MINUTES") {
+        //                         input message: "Etes vous certains de vouloir cette MEP ?", ok: 'Yes'
+        //                 } 
+        //                 // Lire l'IP de l'instance
+        //                 def instanceIP = readFile('instance_ip.txt').trim()
+        //                 echo "Déploiement des manifests Kubernetes sur le cluster K3s avec IP : ${instanceIP}"
+        //                 sh """
+        //                 curl -LO https://dl.k8s.io/release/\$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
+        //                 chmod +x ./kubectl
+        //                 mv ./kubectl /usr/local/bin/kubectl
+        //                 kubectl version --client
+        //                 """
+        //                 // Configurer kubectl pour accéder au cluster K3s
+        //                 sh """
+        //                 chmod 400 sun.pem
+        //                 ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
+        //                 """
+        //                  // Modifier le kubeconfig pour utiliser l'IP publique
+        //                  sh "sed -i 's/127.0.0.1/${instanceIP}/' kubeconfig.yaml"
+        //                 // Configurer kubectl pour utiliser le fichier kubeconfig
+        //                 sh 'export KUBECONFIG=kubeconfig.yaml'
 
-                        // Déployer les manifests Kubernetes
-                        sh """
-                        kubectl apply -f deployment.yaml
-                        kubectl apply -f services.yaml
-                        """
-                    }
-                }
-        }
+        //                 // Déployer les manifests Kubernetes
+        //                 sh """
+        //                 kubectl apply -f deployment.yaml
+        //                 kubectl apply -f services.yaml
+        //                 """
+        //             }
+        //         }
+        // }
 
     }
     post {
