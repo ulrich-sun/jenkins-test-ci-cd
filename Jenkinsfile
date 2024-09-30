@@ -3,9 +3,9 @@
 
 pipeline {
     agent any
-     environment {
+    environment {
         INSTANCE_IP = ''
-     }
+    }
     stages {
         stage('Checkout from GIT') {
             steps {
@@ -24,15 +24,19 @@ pipeline {
             }
             steps {
                 script {
-                    sh 'terraform init'
-                    sh 'terraform apply --auto-approve'
-                    
-                    // Récupérer l'adresse IP publique de l'instance
-                     INSTANCE_IP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
-                    echo "L'adresse IP publique de l'instance est : ${INSTANCE_IP}"
+                    try {
+                        sh 'terraform init'
+                        sh 'terraform apply --auto-approve'
+                        
+                        // Récupérer l'adresse IP publique de l'instance
+                        INSTANCE_IP = sh(script: 'terraform output -raw instance_ip', returnStdout: true).trim()
+                        echo "L'adresse IP publique de l'instance est : ${INSTANCE_IP}"
 
-                    // Stocker l'IP dans un fichier pour l'étape suivante
-                    writeFile file: 'instance_ip.txt', text: INSTANCE_IP
+                        // Stocker l'IP dans un fichier pour l'étape suivante
+                        writeFile file: 'instance_ip.txt', text: INSTANCE_IP
+                    } catch (Exception e) {
+                        error "Échec de l'initialisation ou de l'application Terraform : ${e.message}"
+                    }
                 }
             }
         }
@@ -44,36 +48,39 @@ pipeline {
             }
             steps {
                 script {
-                    def INSTANCE_IP = readFile('instance_ip.txt').trim()
-                    echo "Installer K3s sur l'instance avec IP : ${INSTANCE_IP}"
-                    
-                    // Créer un fichier d'inventaire pour Ansible
-                    writeFile file: 'inventory.ini', text: "[k3s]\n${INSTANCE_IP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
-                    echo "CHange key permission"
-                    sh 'chmod 400 sun.pem'
-                    // Exécuter le playbook Ansible pour installer K3s
-                    sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
+                    if (fileExists('instance_ip.txt')) {
+                        def INSTANCE_IP = readFile('instance_ip.txt').trim()
+                        echo "Installer K3s sur l'instance avec IP : ${INSTANCE_IP}"
+                        
+                        // Créer un fichier d'inventaire pour Ansible
+                        writeFile file: 'inventory.ini', text: "[k3s]\n${INSTANCE_IP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
+                        echo "Changer les permissions de la clé"
+                        sh 'chmod 400 sun.pem'
+                        
+                        // Exécuter le playbook Ansible pour installer K3s
+                        sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
+                    } else {
+                        error "Le fichier instance_ip.txt n'existe pas."
+                    }
                 }
             }
         }
         stage('Configure kubectl for Remote Access') {
-        steps {
-            script {
-                // Lire l'IP depuis le fichier
-                def instanceIP = readFile('instance_ip.txt').trim()
-                echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
+            steps {
+                script {
+                    def instanceIP = readFile('instance_ip.txt').trim()
+                    echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
 
-                // Afficher le contenu de l'IP pour débogage
-                sh 'cat instance_ip.txt'
+                    // Afficher le contenu de l'IP pour débogage
+                    sh 'cat instance_ip.txt'
 
-                // Récupérer le fichier kubeconfig
-                sh """
-                ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
-                """
+                    // Récupérer le fichier kubeconfig
+                    sh """
+                    ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
+                    """
+                }
             }
         }
-        }
-
         stage('Deploy to K3s') {
             steps {
                 script {
@@ -110,12 +117,8 @@ pipeline {
     post {
         always {
             script {
-                /*sh '''
-                    echo "Manually Cleaning workspace after starting"
-                    rm -f vault.key id_rsa id_rsa.pub password devops.pem public_ip.txt
-                ''' */
-                slackNotifier currentBuild.result
+                slackNotifier currentBuild.result, "Le pipeline a terminé avec le résultat : ${currentBuild.result}."
             }
         }
-    } 
+    }
 }
