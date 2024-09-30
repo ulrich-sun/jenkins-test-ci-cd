@@ -40,47 +40,59 @@ pipeline {
                 }
             }
         }
-        stage('Install K3s with Ansible') {
-            agent {
-                docker {
-                    image 'registry.gitlab.com/robconnolly/docker-ansible:latest'
-                }
-            }
-            steps {
-                script {
-                    if (fileExists('instance_ip.txt')) {
-                        def INSTANCE_IP = readFile('instance_ip.txt').trim()
-                        echo "Installer K3s sur l'instance avec IP : ${INSTANCE_IP}"
+        // stage('Install K3s with Ansible') {
+        //     agent {
+        //         docker {
+        //             image 'registry.gitlab.com/robconnolly/docker-ansible:latest'
+        //         }
+        //     }
+        //     steps {
+        //         script {
+        //             if (fileExists('instance_ip.txt')) {
+        //                 def INSTANCE_IP = readFile('instance_ip.txt').trim()
+        //                 echo "Installer K3s sur l'instance avec IP : ${INSTANCE_IP}"
                         
-                        // Créer un fichier d'inventaire pour Ansible
-                        writeFile file: 'inventory.ini', text: "[k3s]\n${INSTANCE_IP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
-                        echo "Changer les permissions de la clé"
-                        sh 'chmod 400 sun.pem'
+        //                 // Créer un fichier d'inventaire pour Ansible
+        //                 writeFile file: 'inventory.ini', text: "[k3s]\n${INSTANCE_IP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
+        //                 echo "Changer les permissions de la clé"
+        //                 sh 'chmod 400 sun.pem'
                         
-                        // Exécuter le playbook Ansible pour installer K3s
-                        sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
-                    } else {
-                        error "Le fichier instance_ip.txt n'existe pas."
-                    }
-                }
-            }
-        }
+        //                 // Exécuter le playbook Ansible pour installer K3s
+        //                 sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
+        //             } else {
+        //                 error "Le fichier instance_ip.txt n'existe pas."
+        //             }
+        //         }
+        //     }
+        // }
         stage('Configure kubectl for Remote Access') {
             steps {
                 script {
+                    // Lire l'IP de l'instance
                     def instanceIP = readFile('instance_ip.txt').trim()
                     echo "Configurer kubectl pour accéder à K3s sur l'instance avec IP : ${instanceIP}"
 
                     // Afficher le contenu de l'IP pour débogage
-                    sh 'cat instance_ip.txt'
+                    sh "cat instance_ip.txt"
+
+                    // Vérifier si l'IP n'est pas vide
+                    if (!instanceIP) {
+                        error "L'adresse IP de l'instance est vide."
+                    }
 
                     // Récupérer le fichier kubeconfig
-                    sh """
-                    ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
-                    """
+                    try {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
+                        """
+                        echo "Fichier kubeconfig récupéré avec succès."
+                    } catch (Exception e) {
+                        error "Échec de la récupération du fichier kubeconfig : ${e.message}"
+                    }
                 }
             }
         }
+
         stage('Deploy to K3s') {
             steps {
                 script {
