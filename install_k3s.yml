@@ -1,0 +1,14 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Installer K3s
+      shell: curl -s https://get.k3s.io | sh -
+
+    - name: Vérifier que K3s est installé
+      command: k3s kubectl get nodes
+      register: result
+
+    - name: Afficher le résultat
+      debug:
+        var: result.stdout

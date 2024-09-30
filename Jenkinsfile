@@ -46,7 +46,8 @@ pipeline {
                     
                     // Créer un fichier d'inventaire pour Ansible
                     writeFile file: 'inventory.ini', text: "[k3s]\n${instanceIP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
-
+                    echo "CHange key permission"
+                    sh 'chmod 400 sun.pem'
                     // Exécuter le playbook Ansible pour installer K3s
                     sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
                 }
