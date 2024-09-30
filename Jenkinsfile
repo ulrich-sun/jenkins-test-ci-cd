@@ -47,7 +47,7 @@ pipeline {
                     writeFile file: 'inventory.ini', text: "[web]\n${instanceIP} ansible_ssh_user=ubuntu ansible_ssh_private_key_file=sun.pem"
 
                     // Exécuter le playbook Ansible
-                    sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_nginx.yml'
+                    sh 'ANSIBLE_HOST_KEY_CHECKING=false ansible-playbook -i inventory.ini install_k3s.yml'
                 }
             }
         }
