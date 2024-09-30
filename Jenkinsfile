@@ -71,6 +71,8 @@ pipeline {
                         chmod 400 sun.pem
                         ssh -o StrictHostKeyChecking=no -i sun.pem ubuntu@${instanceIP} "sudo cat /etc/rancher/k3s/k3s.yaml" > kubeconfig.yaml
                         """
+                         // Modifier le kubeconfig pour utiliser l'IP publique
+                         sh "sed -i 's/127.0.0.1/${instanceIP}/' kubeconfig.yaml"
                         // Configurer kubectl pour utiliser le fichier kubeconfig
                         sh 'export KUBECONFIG=kubeconfig.yaml'
 
